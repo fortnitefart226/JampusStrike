@@ -72,7 +72,8 @@ constexpr wchar_t kTargetExecutable[] = L"JampusStrike.exe";
 constexpr wchar_t kAssetsFolder[] = L"assets";
 
 constexpr char kVersionText[] = "v1.1.1";
-constexpr char kUpdatingMessage[] = "This module is currently being updated. Check back soon.";
+constexpr char kUpdatingMessage[] = "Jampus is being updated for the current game version. If you'd like to load with Jampus, downgrade to a version Jampus supports.";
+constexpr char kUpdatingSummary[] = "Being updated for the current game version.";
 constexpr char kMissingExecutableMessage[] = "Place JampusStrike.exe in the same folder as Jampus Client, then try again.";
 constexpr char kModalPopupId[] = "##jampus_modal";
 
@@ -84,23 +85,33 @@ constexpr float kTitleButtonWidth = 46.0f;
 constexpr float kTitleButtonInset = 6.0f;
 constexpr float kTitleGlyphSize = 10.0f;
 constexpr float kContentPadding = 24.0f;
-constexpr float kHeaderTopPadding = 22.0f;
-constexpr float kHeaderToGrid = 18.0f;
+constexpr float kHeaderTopPadding = 12.0f;
+constexpr float kHeaderToGrid = 16.0f;
 constexpr float kButtonHeight = 36.0f;
 constexpr float kButtonRounding = 9.0f;
 constexpr float kFooterHeight = 40.0f;
 
-// Game cards (kept to their established design).
-constexpr float kCardGap = 14.0f;
-constexpr float kCardPadding = 14.0f;
-constexpr float kCardMinWidth = 180.0f;
-constexpr float kNameToStatusGap = 8.0f;
-constexpr float kCardRounding = 12.0f;
-constexpr float kCardButtonHeight = 34.0f;
-constexpr float kCardButtonRounding = 6.0f;
-constexpr float kBannerAspect = 16.0f / 9.0f; // Artwork banner across the top of each card.
-constexpr float kArtHoverZoom = 0.04f;        // Extra zoom applied to the artwork on hover.
-constexpr float kHoverAnimationSpeed = 12.0f;
+// Library: the selected game's banner and details, with a strip of all games beneath.
+constexpr float kHeroWidth = 368.0f;          // 16:9; below the art's native width so it stays sharp.
+constexpr float kHeroRounding = 14.0f;
+constexpr float kPanelGap = 24.0f;
+constexpr float kLoadButtonHeight = 44.0f;
+constexpr float kHeroToStrip = 16.0f;
+constexpr float kThumbHeight = 108.0f;
+constexpr float kThumbGap = 14.0f;
+constexpr float kThumbRounding = 10.0f;
+constexpr float kSelectFadeSeconds = 0.28f;
+
+// Tabs, settings and toasts.
+constexpr float kTabWidth = 86.0f;
+constexpr float kTabHeight = 32.0f;
+constexpr float kTabFadeSeconds = 0.25f;
+constexpr float kToastSeconds = 2.6f;
+constexpr float kGlowShiftSpeed = 4.5f;       // How quickly the ambient glow follows a new selection.
+// How strongly the game colour shows in each corner of the page gradient (0..1).
+constexpr float kGradientTopRight = 0.5f;
+constexpr float kGradientTopLeft = 0.2f;
+constexpr float kGradientBottomRight = 0.16f;
 
 // Dialogs.
 constexpr float kModalRounding = 16.0f;
@@ -120,8 +131,7 @@ constexpr float kFontCaptionSize = 12.5f;
 constexpr float kFontLabelSize = 14.0f;
 constexpr float kFontChipSize = 12.0f;
 constexpr float kFontEyebrowSize = 11.0f;
-constexpr float kFontCardTitleSize = 16.0f;
-constexpr float kFontCardButtonSize = 14.0f;
+constexpr float kFontDetailTitleSize = 24.0f;
 constexpr float kFontHeadingSize = 25.0f;
 constexpr float kFontModalTitleSize = 21.0f;
 constexpr float kFontNoticeTitleSize = 16.5f;
@@ -134,6 +144,22 @@ constexpr float kContentFadeSeconds = 0.26f;
 constexpr float kCheckDrawSeconds = 0.32f;
 constexpr float kSpinnerTurnsPerSecond = 0.9f;
 constexpr DWORD kBackgroundWaitMs = 100;
+constexpr ULONGLONG kTargetCheckIntervalMs = 1000; // How often the footer re-checks for JampusStrike.exe.
+
+// Startup loading screen. Artwork is decoded behind it; the minimum time keeps the
+// sequence readable rather than a flash, and any click or key skips the rest once
+// loading has finished.
+constexpr float kSplashMinSeconds = 3.0f;    // About a second per game.
+constexpr float kSplashHoldSeconds = 0.35f;   // Pause on "Ready" before handing off.
+constexpr float kSplashFadeInSeconds = 0.45f;
+constexpr float kSplashOutSeconds = 0.55f;
+constexpr float kSplashArtFadeSeconds = 0.7f; // Each artwork panel fades in once decoded.
+constexpr float kSplashRingRadius = 30.0f;
+constexpr float kSplashBannerWidth = 320.0f;  // Below the art's native width, so it stays sharp.
+constexpr float kSplashBannerFadeSeconds = 0.4f;
+constexpr float kSplashBarWidth = 220.0f;
+constexpr float kLibraryEnterSeconds = 0.5f;
+constexpr float kCardStaggerSeconds = 0.08f;
 
 // Palette: layered graphite surfaces, one iris accent, and status colours used sparingly.
 // Surface, text, accent and status values are the launcher's established colours.
@@ -158,10 +184,6 @@ constexpr ImU32 kColOnAccent = IM_COL32(19, 15, 35, 255);
 constexpr ImU32 kColReady = IM_COL32(61, 214, 140, 255);
 constexpr ImU32 kColUpdating = IM_COL32(245, 165, 36, 255);
 constexpr ImU32 kColError = IM_COL32(244, 104, 104, 255);
-constexpr ImU32 kColCardBorder = IM_COL32(255, 255, 255, 16);
-constexpr ImU32 kColDisabledFill = IM_COL32(255, 255, 255, 12);
-constexpr ImU32 kColDisabledBorder = IM_COL32(255, 255, 255, 18);
-constexpr ImU32 kColDisabledText = IM_COL32(122, 127, 135, 255);
 constexpr ImU32 kColCloseHover = IM_COL32(196, 43, 28, 255);
 constexpr ImU32 kColCloseActive = IM_COL32(160, 32, 20, 255);
 constexpr ImU32 kColModalDim = IM_COL32(4, 5, 9, 185);
@@ -191,12 +213,13 @@ struct GameEntry {
     const wchar_t* artFile; // Banner artwork inside the assets folder.
     float artFocusX;        // Point of interest (0..1) kept in frame when the art is cropped.
     float artFocusY;
+    ImU32 glow;             // The game's colour: page gradient, Load button and selection.
 };
 
 constexpr GameEntry kGames[] = {
-    { "Counter-Strike 2", GameStatus::Ready, LoadAction::LaunchJampusStrike, L"cs2.jpg", 0.5f, 0.45f },
-    { "Roblox", GameStatus::Updating, LoadAction::ShowUpdating, L"roblox.png", 0.5f, 0.5f },
-    { "Call of Duty: Modern Warfare 2019", GameStatus::Updating, LoadAction::ShowUpdating, L"cod.png", 0.82f, 0.5f },
+    { "Counter-Strike 2", GameStatus::Ready, LoadAction::LaunchJampusStrike, L"cs2.jpg", 0.5f, 0.45f, IM_COL32(255, 138, 36, 255) },
+    { "Roblox", GameStatus::Updating, LoadAction::ShowUpdating, L"roblox.png", 0.5f, 0.5f, IM_COL32(146, 148, 156, 255) },
+    { "Call of Duty: Modern Warfare 2019", GameStatus::Updating, LoadAction::ShowUpdating, L"cod.png", 0.82f, 0.5f, IM_COL32(84, 98, 60, 255) },
 };
 constexpr int kGameCount = static_cast<int>(sizeof(kGames) / sizeof(kGames[0]));
 
@@ -219,7 +242,7 @@ struct ModalState {
 
 // Actions requested by the UI are executed after the frame has been presented, so that
 // window-state changes and process launches never happen in the middle of an ImGui frame.
-enum class PendingAction { None, Minimize, Close, LaunchJampusStrike };
+enum class PendingAction { None, Minimize, Close, LaunchJampusStrike, OpenLauncherFolder };
 
 struct Fonts {
     ImFont* body = nullptr;
@@ -227,8 +250,7 @@ struct Fonts {
     ImFont* label = nullptr;
     ImFont* chip = nullptr;
     ImFont* eyebrow = nullptr;
-    ImFont* cardTitle = nullptr;
-    ImFont* cardButton = nullptr;
+    ImFont* detailTitle = nullptr;
     ImFont* heading = nullptr;
     ImFont* modalTitle = nullptr;
     ImFont* noticeTitle = nullptr;
@@ -272,7 +294,40 @@ ModalState g_modal;
 PendingAction g_pendingAction = PendingAction::None;
 bool g_launchSucceeded = false;
 bool g_animating = false;
-float g_cardHover[kGameCount] = {};
+int g_selectedGame = 0;          // Game shown in the banner.
+int g_previousGame = 0;          // Previous selection, for the crossfade.
+double g_selectionChangedAt = -10.0;
+
+struct Settings {
+    bool skipIntro = false;
+    bool reduceMotion = false;
+    bool gameColors = true;
+    bool alwaysOnTop = true;
+    bool closeAfterLaunch = true;
+    int loadAction = 0; // 0 = ask, 1 = prepare first, 2 = launch directly
+};
+Settings g_settings;
+
+enum class Tab { Library, Settings };
+Tab g_tab = Tab::Library;
+double g_tabChangedAt = -10.0;
+
+struct Toast {
+    std::string text;
+    double shownAt = -1.0;
+};
+Toast g_toast;
+
+struct StartupState {
+    int artProcessed = 0;                // Catalogue entries whose artwork has been loaded (or skipped).
+    double artReadyAt[kGameCount] = {};  // ImGui time each artwork became available.
+    double shownAt = -1.0;               // First splash frame.
+    double libraryAt = -1.0;             // Hand-off to the library began.
+    int bannerShown = -1;                // Game whose banner the loading screen shows.
+    int bannerPrevious = -1;             // Banner being crossfaded out.
+    double bannerChangedAt = 0.0;
+};
+StartupState g_startup;
 std::unordered_map<ImGuiID, float> g_anim; // Smoothed hover/press values for dialog controls.
 
 // ---------------------------------------------------------------------------------------
@@ -418,6 +473,63 @@ void ShowModal(ModalKind kind, std::string message, int gameIndex = 0) {
     g_modal.openedAt = ImGui::GetTime();
 }
 
+// ---------------------------------------------------------------------------------------
+// Settings (saved to "%LOCALAPPDATA%\Jampus Client\settings.ini")
+// ---------------------------------------------------------------------------------------
+
+std::wstring SettingsPath() {
+    wchar_t buffer[MAX_PATH] = {};
+    const DWORD length = GetEnvironmentVariableW(L"LOCALAPPDATA", buffer, MAX_PATH);
+    if (length == 0 || length >= MAX_PATH)
+        return {};
+    return JoinPath(JoinPath(std::wstring(buffer, length), L"Jampus Client"), L"settings.ini");
+}
+
+void LoadSettings() {
+    const std::wstring path = SettingsPath();
+    FILE* file = nullptr;
+    if (path.empty() || _wfopen_s(&file, path.c_str(), L"r") != 0 || !file)
+        return;
+    char key[64] = {};
+    int value = 0;
+    while (fscanf_s(file, " %63[^=]=%d", key, static_cast<unsigned>(sizeof(key)), &value) == 2) {
+        const std::string name = key;
+        if (name == "skip_intro") g_settings.skipIntro = value != 0;
+        else if (name == "reduce_motion") g_settings.reduceMotion = value != 0;
+        else if (name == "game_colors") g_settings.gameColors = value != 0;
+        else if (name == "always_on_top") g_settings.alwaysOnTop = value != 0;
+        else if (name == "close_after_launch") g_settings.closeAfterLaunch = value != 0;
+        else if (name == "load_action") g_settings.loadAction = std::clamp(value, 0, 2);
+    }
+    fclose(file);
+}
+
+void SaveSettings() {
+    const std::wstring path = SettingsPath();
+    if (path.empty())
+        return;
+    CreateDirectoryW(path.substr(0, path.find_last_of(L'\\')).c_str(), nullptr);
+    FILE* file = nullptr;
+    if (_wfopen_s(&file, path.c_str(), L"w") != 0 || !file) {
+        LogError(L"Could not save settings.");
+        return;
+    }
+    std::fprintf(file, "skip_intro=%d\nreduce_motion=%d\ngame_colors=%d\nalways_on_top=%d\nclose_after_launch=%d\nload_action=%d\n",
+                 g_settings.skipIntro ? 1 : 0, g_settings.reduceMotion ? 1 : 0, g_settings.gameColors ? 1 : 0,
+                 g_settings.alwaysOnTop ? 1 : 0, g_settings.closeAfterLaunch ? 1 : 0, g_settings.loadAction);
+    fclose(file);
+}
+
+void ApplyAlwaysOnTop() {
+    if (g_hwnd)
+        SetWindowPos(g_hwnd, g_settings.alwaysOnTop ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+}
+
+void ShowToast(const char* text) {
+    g_toast.text = text;
+    g_toast.shownAt = ImGui::GetTime();
+}
+
 void LaunchJampusStrike() {
     const std::wstring directory = GetLauncherDirectory();
     if (directory.empty()) {
@@ -455,8 +567,12 @@ void LaunchJampusStrike() {
     const INT_PTR code = reinterpret_cast<INT_PTR>(info.hInstApp);
     if (launched && code > 32) {
         // Windows reported success: close the launcher through the normal shutdown path.
-        g_launchSucceeded = true;
-        PostMessageW(g_hwnd, WM_CLOSE, 0, 0);
+        if (g_settings.closeAfterLaunch) {
+            g_launchSucceeded = true;
+            PostMessageW(g_hwnd, WM_CLOSE, 0, 0);
+        } else {
+            ShowToast("JampusStrike.exe started");
+        }
         return;
     }
 
@@ -496,9 +612,9 @@ bool DecodeImageRgba(IWICImagingFactory* factory, const std::wstring& path, Game
     return true;
 }
 
-// Loads each card's artwork from "<launcher>\assets", falling back to "<launcher>\..\assets"
+// Decodes one card's artwork from "<launcher>\assets", falling back to "<launcher>\..\assets"
 // for development layouts. Missing artwork is not an error: the card renders without it.
-void LoadGameArt() {
+void LoadGameArtAt(int index) {
     ComPtr<IWICImagingFactory> factory;
     if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory)))) {
         LogError(L"WIC is unavailable; game artwork will not be shown.");
@@ -509,13 +625,10 @@ void LoadGameArt() {
     if (launcherDir.empty())
         return;
     const std::wstring searchDirs[] = { JoinPath(launcherDir, kAssetsFolder), JoinPath(JoinPath(launcherDir, L".."), kAssetsFolder) };
-
-    for (int i = 0; i < kGameCount; ++i) {
-        for (const std::wstring& dir : searchDirs) {
-            const std::wstring path = JoinPath(dir, kGames[i].artFile);
-            if (IsExistingFile(path) && DecodeImageRgba(factory.Get(), path, g_art[i]))
-                break;
-        }
+    for (const std::wstring& dir : searchDirs) {
+        const std::wstring path = JoinPath(dir, kGames[index].artFile);
+        if (IsExistingFile(path) && DecodeImageRgba(factory.Get(), path, g_art[index]))
+            return;
     }
 }
 
@@ -703,8 +816,7 @@ void BuildFonts() {
     g_fonts.label = LoadFont(semibold, kFontLabelSize);
     g_fonts.chip = LoadFont(bold, kFontChipSize);
     g_fonts.eyebrow = LoadFont(bold, kFontEyebrowSize);
-    g_fonts.cardTitle = LoadFont(bold, kFontCardTitleSize);
-    g_fonts.cardButton = LoadFont(bold, kFontCardButtonSize);
+    g_fonts.detailTitle = LoadFont(semibold, kFontDetailTitleSize);
     g_fonts.heading = LoadFont(semibold, kFontHeadingSize);
     g_fonts.modalTitle = LoadFont(semibold, kFontModalTitleSize);
     g_fonts.noticeTitle = LoadFont(semibold, kFontNoticeTitleSize);
@@ -776,6 +888,8 @@ float Length(ImVec2 v) {
 // 0..1 progress of a one-shot transition that started at `startedAt` (ImGui time). Keeps
 // frames coming while it runs, even when the launcher is in the background.
 float TransitionProgress(double startedAt, float durationSeconds) {
+    if (g_settings.reduceMotion)
+        return 1.0f;
     const float t = Saturate(static_cast<float>(Now() - startedAt) / durationSeconds);
     if (t < 1.0f)
         g_animating = true;
@@ -785,6 +899,10 @@ float TransitionProgress(double startedAt, float durationSeconds) {
 // Exponentially smoothed per-widget value (hover, press). Frame-rate independent.
 float Animate(ImGuiID id, float target, float speed = kHoverSpeed) {
     float& value = g_anim[id];
+    if (g_settings.reduceMotion) {
+        value = target;
+        return value;
+    }
     const float dt = std::min(ImGui::GetIO().DeltaTime, 0.05f);
     value += (target - value) * (1.0f - std::exp(-speed * dt));
     if (std::fabs(target - value) < 0.002f)
@@ -861,10 +979,14 @@ void DrawCoverImage(ImDrawList* drawList, const GameArt& art, ImVec2 min, ImVec2
         spanU = boxAspect / imageAspect;
     else
         spanV = imageAspect / boxAspect;
-    spanU /= zoom;
-    spanV /= zoom;
-    const float u0 = std::clamp(focus.x - spanU * 0.5f, 0.0f, 1.0f - spanU);
-    const float v0 = std::clamp(focus.y - spanV * 0.5f, 0.0f, 1.0f - spanV);
+    // Stay half a texel inside the image: the renderer samples with wrap addressing, so
+    // UVs that touch 0 or 1 would blend in pixels from the opposite edge.
+    const float halfU = 0.5f / static_cast<float>(art.width);
+    const float halfV = 0.5f / static_cast<float>(art.height);
+    spanU = std::min(spanU / zoom, 1.0f - 2.0f * halfU);
+    spanV = std::min(spanV / zoom, 1.0f - 2.0f * halfV);
+    const float u0 = std::clamp(focus.x - spanU * 0.5f, halfU, 1.0f - halfU - spanU);
+    const float v0 = std::clamp(focus.y - spanV * 0.5f, halfV, 1.0f - halfV - spanV);
 
     // Triangulate the rounded outline as a fan around its centre so every triangle is
     // well-formed (ImDrawList::AddImageRounded fans from a corner vertex instead).
@@ -997,7 +1119,14 @@ void DrawFocusRing(ImDrawList* drawList, ImVec2 min, ImVec2 max, float rounding)
 
 // The one button used everywhere. Unavailable ("Muted") buttons deliberately stay
 // interactive (BeginDisabled() is not used) so clicking them can explain why.
-bool UiButton(const char* id, const char* label, ImVec2 pos, ImVec2 size, ButtonKind kind) {
+// Dark or light label colour, whichever reads better on `fill`.
+ImU32 ReadableTextOn(ImU32 fill) {
+    const ImVec4 c = ImGui::ColorConvertU32ToFloat4(fill);
+    return 0.2126f * c.x + 0.7152f * c.y + 0.0722f * c.z > 0.45f ? kColOnAccent : IM_COL32_WHITE;
+}
+
+// `tint` (optional) recolours Primary and Muted buttons, e.g. with the selected game's colour.
+bool UiButton(const char* id, const char* label, ImVec2 pos, ImVec2 size, ButtonKind kind, ImU32 tint = 0) {
     pos = FloorVec(pos);
     ImGui::SetCursorScreenPos(pos);
     const bool clicked = ImGui::InvisibleButton(id, size, ImGuiButtonFlags_EnableNav);
@@ -1021,9 +1150,14 @@ bool UiButton(const char* id, const char* label, ImVec2 pos, ImVec2 size, Button
     ImU32 text = kColText;
     switch (kind) {
     case ButtonKind::Primary:
-        fill = LerpColor(LerpColor(kColAccent, kColAccentHover, hover), kColAccentActive, press);
+        if (tint) {
+            fill = LerpColor(LerpColor(tint, LerpColor(tint, IM_COL32_WHITE, 0.16f), hover), LerpColor(tint, IM_COL32_BLACK, 0.18f), press);
+            text = ReadableTextOn(fill);
+        } else {
+            fill = LerpColor(LerpColor(kColAccent, kColAccentHover, hover), kColAccentActive, press);
+            text = kColOnAccent;
+        }
         border = IM_COL32(255, 255, 255, 30);
-        text = kColOnAccent;
         break;
     case ButtonKind::Secondary:
         fill = LerpColor(IM_COL32(255, 255, 255, 9), IM_COL32(255, 255, 255, 18), hover);
@@ -1031,8 +1165,13 @@ bool UiButton(const char* id, const char* label, ImVec2 pos, ImVec2 size, Button
         text = LerpColor(kColTextSoft, kColText, hover);
         break;
     case ButtonKind::Muted:
-        fill = LerpColor(IM_COL32(255, 255, 255, 5), IM_COL32(255, 255, 255, 10), hover);
-        border = kColHairline;
+        if (tint) {
+            fill = LerpColor(WithAlpha(tint, 16), WithAlpha(tint, 30), hover);
+            border = WithAlpha(tint, 60);
+        } else {
+            fill = LerpColor(IM_COL32(255, 255, 255, 5), IM_COL32(255, 255, 255, 10), hover);
+            border = kColHairline;
+        }
         text = LerpColor(kColTextDim, kColTextMuted, hover);
         break;
     }
@@ -1103,6 +1242,14 @@ ImVec2 DrawPill(ImDrawList* drawList, ImVec2 pos, ImFont* font, const char* labe
 // Library screen
 // ---------------------------------------------------------------------------------------
 
+// 0..1 entrance progress for a library element that starts `delay` seconds after the
+// loading screen hands off. Always 1 once the entrance has played.
+float LibraryEnterProgress(float delay) {
+    if (g_startup.libraryAt < 0.0)
+        return 1.0f;
+    return TransitionProgress(g_startup.libraryAt + delay, kLibraryEnterSeconds);
+}
+
 // A gentle top-lit gradient behind the whole page.
 void DrawBackdrop(ImDrawList* drawList, ImVec2 origin, ImVec2 size) {
     drawList->AddRectFilled(origin, origin + size, kColBackground);
@@ -1121,163 +1268,519 @@ void DrawTitleBar(ImDrawList* drawList, ImVec2 origin, float width) {
         g_pendingAction = PendingAction::Close;
 }
 
+void DrawTabSwitcher(ImVec2 topRight); // Defined with the Settings view below.
+
 float DrawHeader(ImDrawList* drawList, ImVec2 origin, float width) {
     const float left = origin.x + Px(kContentPadding);
     const float right = origin.x + width - Px(kContentPadding);
     const float top = origin.y + TitleBarHeightPx() + Px(kHeaderTopPadding);
+    const bool library = g_tab == Tab::Library;
 
-    DrawString(drawList, g_fonts.heading, ImVec2(left, top), kColText, "Your games");
+    const int firstVertex = drawList->VtxBuffer.Size;
+    DrawString(drawList, g_fonts.heading, ImVec2(left, top), kColText, library ? "Your games" : "Settings");
     const float captionY = top + g_fonts.heading->FontSize + Px(3.0f);
-    DrawString(drawList, g_fonts.caption, ImVec2(left, captionY), kColTextMuted, "Choose a title to get started.");
+    DrawString(drawList, g_fonts.caption, ImVec2(left, captionY), kColTextMuted,
+               library ? "Choose a title to get started." : "Tune how Jampus Client looks and behaves.");
+    const float t = EaseOutCubic(TransitionProgress(g_tabChangedAt, kTabFadeSeconds));
+    FadeVertices(drawList, firstVertex, t, 0.0f);
 
-    int readyCount = 0;
-    for (const GameEntry& game : kGames)
-        readyCount += game.status == GameStatus::Ready ? 1 : 0;
-    char summary[64];
-    std::snprintf(summary, sizeof(summary), "%d games \xC2\xB7 %d ready", kGameCount, readyCount);
-
-    // Right-aligned summary pill, centred on the heading/caption block.
-    const float pillHeight = g_fonts.caption->FontSize + 2.0f * Px(4.0f);
-    const float pillWidth = Px(9.0f) * 2.0f + Px(6.0f) + Px(6.0f) + MeasureText(g_fonts.caption, summary).x;
     const float blockCenter = (top + captionY + g_fonts.caption->FontSize) * 0.5f;
-    DrawPill(drawList, ImVec2(right - std::floor(pillWidth), blockCenter - pillHeight * 0.5f), g_fonts.caption, summary,
-             kColReady, kColTextSoft, false);
-
+    DrawTabSwitcher(ImVec2(right, std::floor(blockCenter - Px(kTabHeight) * 0.5f)));
     return captionY + g_fonts.caption->FontSize + Px(kHeaderToGrid);
 }
 
-void DrawStatusChip(ImDrawList* drawList, ImVec2 pos, GameStatus status) {
-    const char* label = status == GameStatus::Ready ? "Ready" : "Updating";
-    const ImU32 color = status == GameStatus::Ready ? kColReady : kColUpdating;
+// Library layout: a large banner for the selected game with its details beside it, and
+// a strip of all games beneath. Art is never drawn larger than its source, so it stays
+// sharp at 100% scale.
 
-    const float padX = Px(9.0f);
-    const float padY = Px(4.0f);
-    const float dot = Px(6.0f);
-    const float gap = Px(6.0f);
-    const ImVec2 textSize = MeasureText(g_fonts.chip, label);
-    const ImVec2 size(padX + dot + gap + textSize.x + padX, textSize.y + 2.0f * padY);
-
-    pos = FloorVec(pos);
-    drawList->AddRectFilled(pos, pos + size, WithAlpha(color, 28), size.y * 0.5f);
-    drawList->AddCircleFilled(ImVec2(pos.x + padX + dot * 0.5f, pos.y + size.y * 0.5f), dot * 0.5f, color, 16);
-    DrawString(drawList, g_fonts.chip, ImVec2(pos.x + padX + dot + gap, pos.y + padY), color, label);
+void SelectGame(int index) {
+    if (index == g_selectedGame)
+        return;
+    g_previousGame = g_selectedGame;
+    g_selectedGame = index;
+    g_selectionChangedAt = Now();
 }
 
-// Draws a Load button. Unavailable buttons are rendered with muted, disabled styling but
-// deliberately remain interactive (BeginDisabled() is not used) so that clicking them can
-// explain why the game cannot be loaded. The caller never launches anything for them.
-bool LoadButton(ImDrawList* drawList, const char* id, ImVec2 pos, ImVec2 size, bool available) {
+bool IsGameAvailable(int index) {
+    return kGames[index].action == LoadAction::LaunchJampusStrike;
+}
+
+// Shortens `text` with a trailing ellipsis so it fits `maxWidth`.
+std::string EllipsizeText(ImFont* font, const char* text, float maxWidth) {
+    std::string result = text;
+    if (MeasureText(font, result.c_str()).x <= maxWidth)
+        return result;
+    const char* ellipsis = "\xE2\x80\xA6";
+    while (!result.empty() && MeasureText(font, (result + ellipsis).c_str()).x > maxWidth)
+        result.pop_back();
+    while (!result.empty() && (result.back() == ' ' || result.back() == ':'))
+        result.pop_back();
+    return result + ellipsis;
+}
+
+void DrawArtOrPlaceholder(ImDrawList* drawList, int index, ImVec2 min, ImVec2 max, float zoom, float rounding, ImU32 tint) {
+    const GameArt& art = g_art[index];
+    if (art.texture) {
+        DrawCoverImage(drawList, art, min, max, zoom, rounding, ImDrawFlags_RoundCornersAll,
+                       ImVec2(kGames[index].artFocusX, kGames[index].artFocusY), tint);
+        return;
+    }
+    drawList->AddRectFilled(min, max, ScaleAlpha(kColSurfaceRaised, static_cast<float>((tint >> IM_COL32_A_SHIFT) & 0xFF) / 255.0f), rounding);
+    const char initial[2] = { kGames[index].name[0], '\0' };
+    const ImVec2 initialSize = MeasureText(g_fonts.heading, initial);
+    DrawString(drawList, g_fonts.heading, (min + max - initialSize) * 0.5f, kColTextDim, initial);
+}
+
+// The glow's current colour in HSV. It glides towards the selected game's colour around
+// the colour wheel, so it stays vivid in between (no muddy midpoint) and continues
+// smoothly from wherever it is if the selection changes again mid-way.
+struct GlowColor {
+    float h = -1.0f;
+    float s = 0.0f;
+    float v = 0.0f;
+};
+GlowColor g_glow;
+ImU32 g_glowNow = kColAccent; // This frame's game colour.
+
+ImU32 UpdateGlowColor(int gameIndex) {
+    const ImVec4 target = ImGui::ColorConvertU32ToFloat4(kGames[gameIndex].glow);
+    float th = 0.0f, ts = 0.0f, tv = 0.0f;
+    ImGui::ColorConvertRGBtoHSV(target.x, target.y, target.z, th, ts, tv);
+    if (g_glow.h < 0.0f || g_settings.reduceMotion) {
+        g_glow = { th, ts, tv };
+    } else {
+        float dh = th - g_glow.h;
+        dh -= std::floor(dh + 0.5f); // Shortest way around the wheel.
+        const float k = 1.0f - std::exp(-kGlowShiftSpeed * std::min(ImGui::GetIO().DeltaTime, 0.05f));
+        g_glow.h += dh * k;
+        g_glow.h -= std::floor(g_glow.h);
+        g_glow.s += (ts - g_glow.s) * k;
+        g_glow.v += (tv - g_glow.v) * k;
+        if (std::fabs(dh) + std::fabs(ts - g_glow.s) + std::fabs(tv - g_glow.v) > 0.002f)
+            g_animating = true;
+    }
+    float r = 0.0f, g = 0.0f, b = 0.0f;
+    ImGui::ColorConvertHSVtoRGB(g_glow.h, g_glow.s, g_glow.v, r, g, b);
+    return ImGui::ColorConvertFloat4ToU32(ImVec4(r, g, b, 1.0f));
+}
+
+ImVec4 LerpVec4(ImVec4 a, ImVec4 b, float t) {
+    return ImVec4(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t, a.w + (b.w - a.w) * t);
+}
+
+// Fills a rectangle with a smooth four-corner gradient. A grid of vertices gives true
+// bilinear blending (two triangles alone would show a diagonal seam).
+void DrawCornerGradient(ImDrawList* drawList, ImVec2 min, ImVec2 max, ImVec4 topLeft, ImVec4 topRight, ImVec4 bottomRight,
+                        ImVec4 bottomLeft) {
+    constexpr int kCells = 16;
+    const ImVec2 uv = drawList->_Data->TexUvWhitePixel;
+    drawList->PrimReserve(kCells * kCells * 6, (kCells + 1) * (kCells + 1));
+    const ImDrawIdx base = static_cast<ImDrawIdx>(drawList->_VtxCurrentIdx);
+    for (int y = 0; y <= kCells; ++y) {
+        const float fy = static_cast<float>(y) / kCells;
+        for (int x = 0; x <= kCells; ++x) {
+            const float fx = static_cast<float>(x) / kCells;
+            const ImVec4 color = LerpVec4(LerpVec4(topLeft, topRight, fx), LerpVec4(bottomLeft, bottomRight, fx), fy);
+            drawList->PrimWriteVtx(ImVec2(min.x + (max.x - min.x) * fx, min.y + (max.y - min.y) * fy), uv,
+                                   ImGui::ColorConvertFloat4ToU32(color));
+        }
+    }
+    for (int y = 0; y < kCells; ++y) {
+        for (int x = 0; x < kCells; ++x) {
+            const ImDrawIdx i = static_cast<ImDrawIdx>(base + y * (kCells + 1) + x);
+            const ImDrawIdx below = static_cast<ImDrawIdx>(i + kCells + 1);
+            drawList->PrimWriteIdx(i);
+            drawList->PrimWriteIdx(static_cast<ImDrawIdx>(i + 1));
+            drawList->PrimWriteIdx(static_cast<ImDrawIdx>(below + 1));
+            drawList->PrimWriteIdx(i);
+            drawList->PrimWriteIdx(static_cast<ImDrawIdx>(below + 1));
+            drawList->PrimWriteIdx(below);
+        }
+    }
+}
+
+// The page takes on the selected game's colour: strongest in the top-right corner and
+// fading smoothly to the dark base towards the bottom left.
+void DrawGameGradient(ImDrawList* drawList, ImVec2 origin, ImVec2 size, float strength) {
+    if (!g_settings.gameColors)
+        return;
+    const ImVec4 base = ToVec4(kColBackground);
+    const ImVec4 color = ToVec4(g_glowNow);
+    const auto mix = [&](float amount) { return LerpVec4(base, color, amount * strength); };
+    DrawCornerGradient(drawList, origin, origin + size, mix(kGradientTopLeft), mix(kGradientTopRight), mix(kGradientBottomRight),
+                       base);
+}
+
+// The selected game's banner. Switching games crossfades from the previous banner.
+void DrawHeroBanner(ImDrawList* drawList, ImVec2 min, ImVec2 size) {
+    const ImVec2 max = min + size;
+    const float rounding = Px(kHeroRounding);
+    DrawSoftShadow(drawList, min, max, rounding, Px(18.0f), Px(8.0f), 0.9f);
+    drawList->AddRectFilled(min, max, kColSurface, rounding);
+
+    const float t = EaseOutCubic(TransitionProgress(g_selectionChangedAt, kSelectFadeSeconds));
+    if (t < 1.0f)
+        DrawArtOrPlaceholder(drawList, g_previousGame, min, max, 1.0f, rounding, IM_COL32_WHITE);
+    DrawArtOrPlaceholder(drawList, g_selectedGame, min, max, 1.0f + 0.03f * (1.0f - t), rounding,
+                         IM_COL32(255, 255, 255, static_cast<int>(255.0f * t)));
+    drawList->AddRect(min, max, kColHairlineStrong, rounding);
+}
+
+// Name, status and the Load action for the selected game.
+void DrawGameDetails(ImDrawList* drawList, ImVec2 min, ImVec2 size) {
+    const int index = g_selectedGame;
+    const GameEntry& game = kGames[index];
+    const bool available = IsGameAvailable(index);
+    const int firstVertex = drawList->VtxBuffer.Size;
+
+    float y = min.y + Px(2.0f);
+    const ImVec2 chip = DrawPill(drawList, ImVec2(min.x, y), g_fonts.chip, available ? "Updated" : "Updating",
+                                 available ? kColReady : kColUpdating, kColText, false);
+    y += chip.y + Px(14.0f);
+
+    DrawString(drawList, g_fonts.detailTitle, ImVec2(min.x, y), kColText, game.name, size.x);
+    y += MeasureText(g_fonts.detailTitle, game.name, size.x).y + Px(8.0f);
+    DrawString(drawList, g_fonts.body, ImVec2(min.x, y), kColTextMuted,
+               available ? "Ready to launch. Prepare a session first, or start directly." : kUpdatingSummary, size.x);
+
+    const float t = EaseOutCubic(TransitionProgress(g_selectionChangedAt, kSelectFadeSeconds));
+    FadeVertices(drawList, firstVertex, t, std::floor((1.0f - t) * Px(6.0f)));
+
+    const float buttonHeight = Px(kLoadButtonHeight);
+    const bool clicked = UiButton("##load", "Load", ImVec2(min.x, min.y + size.y - buttonHeight), ImVec2(size.x, buttonHeight),
+                                  available ? ButtonKind::Primary : ButtonKind::Muted, g_settings.gameColors ? g_glowNow : 0);
+    if (!clicked || g_launchSucceeded || g_pendingAction != PendingAction::None)
+        return;
+    if (!available) {
+        ShowModal(ModalKind::Updating, kUpdatingMessage, index);
+        return;
+    }
+    switch (g_settings.loadAction) {
+    case 1: // Prepare first: open straight into the preparation sequence.
+        ShowModal(ModalKind::Prelaunch, {}, index);
+        g_modal.kind = ModalKind::Simulating;
+        g_modal.simulationStarted = GetTickCount64();
+        break;
+    case 2: // Launch directly.
+        g_pendingAction = PendingAction::LaunchJampusStrike;
+        break;
+    default:
+        ShowModal(ModalKind::Prelaunch, {}, index);
+        break;
+    }
+}
+
+// One selectable game in the strip beneath the banner.
+void DrawGameThumbnail(ImDrawList* drawList, int index, ImVec2 pos, ImVec2 size) {
+    ImGui::PushID(index);
     pos = FloorVec(pos);
+    ImGui::SetCursorScreenPos(pos);
+    if (ImGui::InvisibleButton("##thumb", size, ImGuiButtonFlags_EnableNav))
+        SelectGame(index);
+    const ImGuiID id = ImGui::GetItemID();
+    const bool hovered = ImGui::IsItemHovered();
+    const bool focused = ImGui::IsItemFocused() && NavCursorVisible();
+    if (hovered)
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    const bool selected = index == g_selectedGame;
+    const float hover = EaseOutCubic(Animate(id, hovered ? 1.0f : 0.0f));
+    const float active = Animate(SubId(id, 2), selected ? 1.0f : 0.0f);
+    ImGui::PopID();
+
+    const float rounding = Px(kThumbRounding);
+    const ImVec2 min = pos - ImVec2(0.0f, hover * Px(2.0f));
+    const ImVec2 max = min + size;
+    DrawSoftShadow(drawList, min, max, rounding, Px(10.0f), Px(4.0f), 0.5f + 0.3f * hover);
+
+    // Unselected games sit back slightly; hover and selection bring them forward.
+    const float brightness = 0.55f + 0.45f * std::max(active, hover * 0.7f);
+    const int v = static_cast<int>(255.0f * brightness);
+    DrawArtOrPlaceholder(drawList, index, min, max, 1.0f + 0.03f * hover, rounding, IM_COL32(v, v, v, 255));
+
+    // Name on a soft scrim along the bottom edge.
+    DrawFadeDown(drawList, ImVec2(min.x, min.y + size.y * 0.42f), max, WithAlpha(kColBackground, 235));
+    const float pad = Px(10.0f);
+    const std::string name = EllipsizeText(g_fonts.chip, kGames[index].name, size.x - 2.0f * pad - Px(14.0f));
+    const float nameY = max.y - pad - g_fonts.chip->FontSize;
+    DrawString(drawList, g_fonts.chip, ImVec2(min.x + pad, nameY), LerpColor(kColTextSoft, kColText, std::max(active, hover)), name.c_str());
+
+    // Status dot.
+    const ImU32 status = IsGameAvailable(index) ? kColReady : kColUpdating;
+    const ImVec2 dot(max.x - pad - Px(3.0f), nameY + g_fonts.chip->FontSize * 0.5f);
+    drawList->AddCircleFilled(dot, Px(5.5f), ScaleAlpha(status, 0.25f), 16);
+    drawList->AddCircleFilled(dot, Px(3.5f), status, 16);
+
+    // Selection ring.
+    drawList->AddRect(min, max, LerpColor(LerpColor(kColHairline, kColHairlineStrong, hover), g_glowNow, active), rounding, 0,
+                      std::max(1.0f, Px(1.0f + active)));
+    if (focused)
+        DrawFocusRing(drawList, min, max, rounding);
+}
+
+// Lays out and draws the whole library body below the header.
+void DrawLibrary(ImDrawList* drawList, ImVec2 origin, float width, float top) {
+    const float left = origin.x + Px(kContentPadding);
+    const float contentWidth = width - 2.0f * Px(kContentPadding);
+    const ImVec2 heroSize(Px(kHeroWidth), std::floor(Px(kHeroWidth) * 9.0f / 16.0f));
+    const ImVec2 heroMin(left, top);
+
+    int firstVertex = drawList->VtxBuffer.Size;
+    DrawHeroBanner(drawList, heroMin, heroSize);
+    float enter = EaseOutCubic(LibraryEnterProgress(0.06f));
+    FadeVertices(drawList, firstVertex, enter, std::floor((1.0f - enter) * Px(16.0f)));
+
+    firstVertex = drawList->VtxBuffer.Size;
+    const float detailsX = heroMin.x + heroSize.x + Px(kPanelGap);
+    DrawGameDetails(drawList, ImVec2(detailsX, top), ImVec2(left + contentWidth - detailsX, heroSize.y));
+    enter = EaseOutCubic(LibraryEnterProgress(0.14f));
+    FadeVertices(drawList, firstVertex, enter, std::floor((1.0f - enter) * Px(16.0f)));
+
+    const float gap = Px(kThumbGap);
+    const ImVec2 thumbSize(std::floor((contentWidth - gap * (kGameCount - 1)) / kGameCount), Px(kThumbHeight));
+    const float stripTop = top + heroSize.y + Px(kHeroToStrip);
+    for (int i = 0; i < kGameCount; ++i) {
+        firstVertex = drawList->VtxBuffer.Size;
+        DrawGameThumbnail(drawList, i, ImVec2(left + i * (thumbSize.x + gap), stripTop), thumbSize);
+        enter = EaseOutCubic(LibraryEnterProgress(0.22f + kCardStaggerSeconds * i));
+        FadeVertices(drawList, firstVertex, enter, std::floor((1.0f - enter) * Px(16.0f)));
+    }
+}
+
+// Live check for the launch target, refreshed about once a second so the footer updates
+// as soon as JampusStrike.exe is added to (or removed from) the launcher folder.
+struct TargetCheck {
+    bool checked = false;
+    bool found = false;
+    ULONGLONG checkedAt = 0;
+    double changedAt = -10.0;
+};
+TargetCheck g_target;
+
+void RefreshTargetCheck() {
+    const ULONGLONG now = GetTickCount64();
+    if (g_target.checked && now - g_target.checkedAt < kTargetCheckIntervalMs)
+        return;
+    const std::wstring directory = GetLauncherDirectory();
+    const bool found = !directory.empty() && IsExistingFile(JoinPath(directory, kTargetExecutable));
+    if (g_target.checked && found != g_target.found)
+        g_target.changedAt = Now();
+    g_target.found = found;
+    g_target.checked = true;
+    g_target.checkedAt = now;
+}
+
+// A compact pill button for the footer.
+bool FooterButton(const char* id, const char* label, ImVec2 pos) {
+    const float padX = Px(10.0f);
+    const ImVec2 textSize = MeasureText(g_fonts.chip, label);
+    const ImVec2 size(std::floor(textSize.x + padX * 2.0f), std::floor(textSize.y + Px(10.0f)));
+    pos = FloorVec(pos - ImVec2(0.0f, size.y * 0.5f));
     ImGui::SetCursorScreenPos(pos);
     const bool clicked = ImGui::InvisibleButton(id, size, ImGuiButtonFlags_EnableNav);
     const bool hovered = ImGui::IsItemHovered();
-    const bool held = ImGui::IsItemActive();
-    const float rounding = Px(kCardButtonRounding);
-
-    ImU32 textColor;
-    if (available) {
-        drawList->AddRectFilled(pos, pos + size, held ? kColAccentActive : hovered ? kColAccentHover : kColAccent, rounding);
-        textColor = kColOnAccent;
-        if (hovered)
-            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-    } else {
-        drawList->AddRectFilled(pos, pos + size, kColDisabledFill, rounding);
-        drawList->AddRect(pos, pos + size, kColDisabledBorder, rounding);
-        textColor = kColDisabledText;
-        if (hovered)
-            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-    }
-
-    const ImVec2 textSize = MeasureText(g_fonts.cardButton, "Load");
-    DrawString(drawList, g_fonts.cardButton, pos + (size - textSize) * 0.5f, textColor, "Load");
+    const float hover = Animate(ImGui::GetItemID(), hovered ? 1.0f : 0.0f);
+    if (hovered)
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    drawList->AddRectFilled(pos, pos + size, LerpColor(IM_COL32(255, 255, 255, 10), IM_COL32(255, 255, 255, 22), hover), size.y * 0.5f);
+    drawList->AddRect(pos, pos + size, LerpColor(kColHairlineStrong, IM_COL32(255, 255, 255, 50), hover), size.y * 0.5f);
+    DrawString(drawList, g_fonts.chip, pos + (size - textSize) * 0.5f, LerpColor(kColTextSoft, kColText, hover), label);
     if (ImGui::IsItemFocused() && NavCursorVisible())
-        drawList->AddRect(pos - ImVec2(Px(2), Px(2)), pos + size + ImVec2(Px(2), Px(2)), kColAccent, rounding);
+        DrawFocusRing(drawList, pos, pos + size, size.y * 0.5f);
     return clicked;
 }
 
-float BannerHeightPx(float cardWidth) {
-    return std::floor(cardWidth / kBannerAspect);
+// ---------------------------------------------------------------------------------------
+// Tabs and the Settings view
+// ---------------------------------------------------------------------------------------
+
+// The colour controls use: the selected game's colour, or the launcher accent when the
+// game colour theme is off.
+ImU32 ControlAccent() {
+    return g_settings.gameColors ? g_glowNow : kColAccent;
 }
 
-float StatusChipHeightPx() {
-    return g_fonts.chip->FontSize + 2.0f * Px(4.0f);
-}
-
-void DrawGameCard(ImDrawList* drawList, int index, ImVec2 cardMin, ImVec2 cardSize, float nameAreaHeight) {
-    const GameEntry& game = kGames[index];
-    const GameArt& art = g_art[index];
-    const ImVec2 cardMax = cardMin + cardSize;
-    const float pad = Px(kCardPadding);
-    const float innerWidth = cardSize.x - 2.0f * pad;
-    const float rounding = Px(kCardRounding);
-    const bool available = game.action == LoadAction::LaunchJampusStrike;
-
-    // Hover is suppressed automatically while a modal blocks the launcher window.
-    const bool hovered = ImGui::IsWindowHovered() && ImGui::IsMouseHoveringRect(cardMin, cardMax);
-    float& hover = g_cardHover[index];
-    const float target = hovered ? 1.0f : 0.0f;
-    hover += (target - hover) * std::min(1.0f, ImGui::GetIO().DeltaTime * kHoverAnimationSpeed);
-    if (std::fabs(target - hover) < 0.002f)
-        hover = target;
-    else
-        g_animating = true;
-
-    // Card surface with the game artwork as a full-width 16:9 banner across the top.
-    drawList->AddRectFilled(cardMin + ImVec2(0, Px(5)), cardMax + ImVec2(0, Px(5)), IM_COL32(0, 0, 0, 65), rounding);
-    drawList->AddRectFilled(cardMin, cardMax, kColSurface, rounding);
-    const ImVec2 bannerMax(cardMax.x, cardMin.y + BannerHeightPx(cardSize.x));
-    if (art.texture)
-        DrawCoverImage(drawList, art, cardMin, bannerMax, 1.0f + kArtHoverZoom * hover, rounding, ImDrawFlags_RoundCornersTop,
-                       ImVec2(0.5f, 0.5f), IM_COL32_WHITE);
-    drawList->AddLine(ImVec2(cardMin.x, bannerMax.y), ImVec2(cardMax.x, bannerMax.y), kColCardBorder);
-    drawList->AddRect(cardMin, cardMax, LerpColor(kColCardBorder, WithAlpha(kColAccent, 145), hover), rounding, 0, 1.0f);
-    if (available)
-        drawList->AddLine(ImVec2(cardMin.x + rounding, cardMax.y), ImVec2(cardMax.x - rounding, cardMax.y), WithAlpha(kColAccent, 85), Px(2));
-
-    // Name (wrapping), status and a bottom-anchored Load button. The name area is sized for
-    // the tallest name in the grid so status chips line up across cards.
-    float y = bannerMax.y + pad;
-    DrawString(drawList, g_fonts.cardTitle, ImVec2(cardMin.x + pad, y), kColText, game.name, innerWidth);
-    y += nameAreaHeight + Px(kNameToStatusGap);
-    DrawStatusChip(drawList, ImVec2(cardMin.x + pad, y), game.status);
-
-    const float buttonHeight = Px(kCardButtonHeight);
-    const ImVec2 buttonPos(cardMin.x + pad, cardMax.y - pad - buttonHeight);
-    ImGui::PushID(index);
-    const bool clicked = LoadButton(drawList, "##load", buttonPos, ImVec2(innerWidth, buttonHeight), available);
-    ImGui::PopID();
-
-    if (!clicked || g_launchSucceeded || g_pendingAction != PendingAction::None)
-        return;
-    if (game.action == LoadAction::LaunchJampusStrike)
-        ShowModal(ModalKind::Prelaunch, {}, index);
-    else
-        ShowModal(ModalKind::Updating, kUpdatingMessage, index);
-}
-
-void DrawGameGrid(ImVec2 origin, float width, float top) {
+// A pill of mutually exclusive options with a highlight that slides to the selection.
+// Returns true when the selection changed.
+bool SegmentedControl(const char* id, const char* const* labels, int count, int* selected, ImVec2 topRight, float segmentWidth,
+                      float height) {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
-    const float left = origin.x + Px(kContentPadding);
-    const float availableWidth = width - 2.0f * Px(kContentPadding);
-    const float gap = Px(kCardGap);
-    const float pad = Px(kCardPadding);
+    const float pad = Px(3.0f);
+    const ImVec2 min(topRight.x - segmentWidth * count - pad * 2.0f, topRight.y);
+    const ImVec2 max(topRight.x, topRight.y + height);
+    drawList->AddRectFilled(min, max, IM_COL32(255, 255, 255, 8), height * 0.5f);
+    drawList->AddRect(min, max, kColHairline, height * 0.5f);
 
-    const int columns = std::clamp(static_cast<int>((availableWidth + gap) / (Px(kCardMinWidth) + gap)), 1, kGameCount);
-    const float cardWidth = std::floor((availableWidth - gap * (columns - 1)) / columns);
-    const float innerWidth = cardWidth - 2.0f * pad;
+    ImGui::PushID(id);
+    const float slide = Animate(ImGui::GetID("##slide"), static_cast<float>(*selected), 16.0f);
+    const ImVec2 indicatorMin(min.x + pad + slide * segmentWidth, min.y + pad);
+    drawList->AddRectFilled(indicatorMin, indicatorMin + ImVec2(segmentWidth, height - pad * 2.0f), IM_COL32(255, 255, 255, 24),
+                            (height - pad * 2.0f) * 0.5f);
 
-    float nameAreaHeight = 0.0f;
-    for (const GameEntry& game : kGames)
-        nameAreaHeight = std::max(nameAreaHeight, MeasureText(g_fonts.cardTitle, game.name, innerWidth).y);
-    const float cardHeight = std::ceil(BannerHeightPx(cardWidth) + pad + nameAreaHeight + Px(kNameToStatusGap) +
-                                       StatusChipHeightPx() + Px(16.0f) + Px(kCardButtonHeight) + pad);
-
-    for (int i = 0; i < kGameCount; ++i) {
-        const int row = i / columns;
-        const int column = i % columns;
-        const ImVec2 cardMin(left + column * (cardWidth + gap), top + row * (cardHeight + gap));
-        DrawGameCard(drawList, i, cardMin, ImVec2(cardWidth, cardHeight), nameAreaHeight);
+    bool changed = false;
+    for (int i = 0; i < count; ++i) {
+        const ImVec2 segmentMin(min.x + pad + i * segmentWidth, min.y);
+        ImGui::SetCursorScreenPos(segmentMin);
+        ImGui::PushID(i);
+        if (ImGui::InvisibleButton("##segment", ImVec2(segmentWidth, height), ImGuiButtonFlags_EnableNav) && *selected != i) {
+            *selected = i;
+            changed = true;
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+        if (ImGui::IsItemFocused() && NavCursorVisible())
+            DrawFocusRing(drawList, segmentMin, segmentMin + ImVec2(segmentWidth, height), height * 0.5f);
+        ImGui::PopID();
+        const float closeness = 1.0f - std::min(1.0f, std::fabs(slide - static_cast<float>(i)));
+        const ImVec2 textSize = MeasureText(g_fonts.label, labels[i]);
+        DrawString(drawList, g_fonts.label, segmentMin + (ImVec2(segmentWidth, height) - textSize) * 0.5f,
+                   LerpColor(kColTextMuted, kColText, closeness), labels[i]);
     }
+    ImGui::PopID();
+    return changed;
+}
+
+void DrawTabSwitcher(ImVec2 topRight) {
+    static const char* const kLabels[] = { "Library", "Settings" };
+    int selected = static_cast<int>(g_tab);
+    if (SegmentedControl("##tabs", kLabels, 2, &selected, topRight, Px(kTabWidth), Px(kTabHeight))) {
+        g_tab = static_cast<Tab>(selected);
+        g_tabChangedAt = Now();
+    }
+}
+
+// An on/off switch whose knob slides across; the track fills with the accent colour.
+bool ToggleSwitch(const char* id, ImVec2 rightCenter, bool* value) {
+    const ImVec2 size(Px(40.0f), Px(22.0f));
+    const ImVec2 pos = FloorVec(ImVec2(rightCenter.x - size.x, rightCenter.y - size.y * 0.5f));
+    ImGui::SetCursorScreenPos(pos);
+    const bool clicked = ImGui::InvisibleButton(id, size, ImGuiButtonFlags_EnableNav);
+    if (clicked)
+        *value = !*value;
+    const ImGuiID itemId = ImGui::GetItemID();
+    const bool hovered = ImGui::IsItemHovered();
+    if (hovered)
+        ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    const float on = Animate(itemId, *value ? 1.0f : 0.0f, 18.0f);
+    const float hover = Animate(SubId(itemId, 3), hovered ? 1.0f : 0.0f);
+
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    const ImU32 off = LerpColor(IM_COL32(255, 255, 255, 26), IM_COL32(255, 255, 255, 40), hover);
+    drawList->AddRectFilled(pos, pos + size, LerpColor(off, ControlAccent(), on), size.y * 0.5f);
+    const float knob = size.y * 0.5f - Px(3.0f);
+    const ImVec2 knobCenter(pos.x + size.y * 0.5f + (size.x - size.y) * on, pos.y + size.y * 0.5f);
+    drawList->AddCircleFilled(knobCenter + ImVec2(0.0f, Px(1.0f)), knob, IM_COL32(0, 0, 0, 60), 24);
+    drawList->AddCircleFilled(knobCenter, knob, IM_COL32_WHITE, 24);
+    if (ImGui::IsItemFocused() && NavCursorVisible())
+        DrawFocusRing(drawList, pos, pos + size, size.y * 0.5f);
+    return clicked;
+}
+
+// A compact pill button whose right edge sits at `rightCenter`.
+bool SmallButton(const char* id, const char* label, ImVec2 rightCenter) {
+    const float width = MeasureText(g_fonts.chip, label).x + Px(20.0f);
+    return FooterButton(id, label, ImVec2(rightCenter.x - std::floor(width), rightCenter.y));
+}
+
+// Title and description for one settings row. Returns the row's vertical centre.
+float DrawSettingText(ImDrawList* drawList, ImVec2 min, float height, const char* title, const char* description) {
+    const float blockHeight = g_fonts.label->FontSize + Px(3.0f) + g_fonts.caption->FontSize;
+    const float top = std::floor(min.y + (height - blockHeight) * 0.5f);
+    DrawString(drawList, g_fonts.label, ImVec2(min.x, top), kColText, title);
+    DrawString(drawList, g_fonts.caption, ImVec2(min.x, top + g_fonts.label->FontSize + Px(3.0f)), kColTextMuted, description);
+    return min.y + height * 0.5f;
+}
+
+void DrawSettings(ImDrawList* drawList, ImVec2 origin, float width, float top, float bottom) {
+    const float left = origin.x + Px(kContentPadding);
+    const float right = origin.x + width - Px(kContentPadding);
+    const ImVec2 panelMin(left, top);
+    const ImVec2 panelMax(right, bottom);
+    drawList->AddRectFilled(panelMin, panelMax, IM_COL32(255, 255, 255, 7), Px(12.0f));
+    drawList->AddRect(panelMin, panelMax, kColHairline, Px(12.0f));
+
+    constexpr int kRows = 7;
+    const float pad = Px(18.0f);
+    const float rowHeight = (bottom - top) / kRows;
+    bool changed = false;
+    for (int row = 0; row < kRows; ++row) {
+        const ImVec2 rowMin(left + pad, top + rowHeight * row);
+        if (row > 0)
+            drawList->AddLine(ImVec2(left + pad, rowMin.y), ImVec2(right - pad, rowMin.y), kColHairline);
+        const ImVec2 control(right - pad, 0.0f);
+        float centerY = 0.0f;
+        switch (row) {
+        case 0:
+            centerY = DrawSettingText(drawList, rowMin, rowHeight, "Skip loading screen", "Go straight to your games when the launcher opens.");
+            changed |= ToggleSwitch("##skip_intro", ImVec2(control.x, centerY), &g_settings.skipIntro);
+            break;
+        case 1:
+            centerY = DrawSettingText(drawList, rowMin, rowHeight, "Reduce motion (Better Performance)", "Turn off animations; redraws only when something changes.");
+            changed |= ToggleSwitch("##reduce_motion", ImVec2(control.x, centerY), &g_settings.reduceMotion);
+            break;
+        case 2:
+            centerY = DrawSettingText(drawList, rowMin, rowHeight, "Game colour theme", "Tint the launcher with the selected game's colour.");
+            changed |= ToggleSwitch("##game_colors", ImVec2(control.x, centerY), &g_settings.gameColors);
+            break;
+        case 3:
+            centerY = DrawSettingText(drawList, rowMin, rowHeight, "Keep launcher on top", "Stay above other windows.");
+            if (ToggleSwitch("##always_on_top", ImVec2(control.x, centerY), &g_settings.alwaysOnTop)) {
+                ApplyAlwaysOnTop();
+                changed = true;
+            }
+            break;
+        case 4:
+            centerY = DrawSettingText(drawList, rowMin, rowHeight, "Close after launch", "Close Jampus Client once the game has started.");
+            changed |= ToggleSwitch("##close_after_launch", ImVec2(control.x, centerY), &g_settings.closeAfterLaunch);
+            break;
+        case 5: {
+            centerY = DrawSettingText(drawList, rowMin, rowHeight, "When I click Load", "Ask each time, prepare first, or launch directly.");
+            static const char* const kOptions[] = { "Ask", "Prepare", "Direct" };
+            const float height = Px(30.0f);
+            changed |= SegmentedControl("##load_action", kOptions, 3, &g_settings.loadAction,
+                                        ImVec2(control.x, std::floor(centerY - height * 0.5f)), Px(72.0f), height);
+            break;
+        }
+        case 6:
+            centerY = DrawSettingText(drawList, rowMin, rowHeight, "Launcher folder", "Where JampusStrike.exe belongs.");
+            if (SmallButton("##reset_settings", "Reset settings", ImVec2(control.x, centerY))) {
+                g_settings = Settings{};
+                ApplyAlwaysOnTop();
+                changed = true;
+            }
+            if (SmallButton("##settings_open_folder", "Open folder",
+                            ImVec2(control.x - MeasureText(g_fonts.chip, "Reset settings").x - Px(20.0f) - Px(8.0f), centerY)))
+                g_pendingAction = PendingAction::OpenLauncherFolder;
+            break;
+        default:
+            break;
+        }
+    }
+    if (changed)
+        SaveSettings();
+}
+
+// A brief confirmation pill above the footer.
+void DrawToast(ImDrawList* drawList, ImVec2 origin, ImVec2 size) {
+    if (g_toast.shownAt < 0.0)
+        return;
+    const float age = static_cast<float>(Now() - g_toast.shownAt);
+    if (age > kToastSeconds) {
+        g_toast.shownAt = -1.0;
+        return;
+    }
+    g_animating = true;
+    const float alpha = g_settings.reduceMotion ? 1.0f : Saturate(age / 0.2f) * Saturate((kToastSeconds - age) / 0.4f);
+    const int firstVertex = drawList->VtxBuffer.Size;
+    const ImVec2 textSize = MeasureText(g_fonts.label, g_toast.text.c_str());
+    const float glyph = Px(12.0f);
+    const ImVec2 pillSize(std::floor(textSize.x + glyph + Px(8.0f) + Px(32.0f)), std::floor(textSize.y + Px(16.0f)));
+    const ImVec2 pillMin = FloorVec(ImVec2(origin.x + (size.x - pillSize.x) * 0.5f, origin.y + size.y - Px(kFooterHeight) - pillSize.y - Px(14.0f)));
+    drawList->AddRectFilled(pillMin, pillMin + pillSize, kColSurfaceRaised, pillSize.y * 0.5f);
+    drawList->AddRect(pillMin, pillMin + pillSize, kColHairlineStrong, pillSize.y * 0.5f);
+    DrawCheck(drawList, pillMin + ImVec2(Px(16.0f) + glyph * 0.5f, pillSize.y * 0.5f), glyph, kColReady, StrokePx(2.0f), 1.0f);
+    DrawString(drawList, g_fonts.label, pillMin + ImVec2(Px(16.0f) + glyph + Px(8.0f), Px(8.0f)), kColText, g_toast.text.c_str());
+    FadeVertices(drawList, firstVertex, alpha, std::floor((1.0f - Saturate(age / 0.2f)) * Px(6.0f)));
 }
 
 void DrawFooter(ImDrawList* drawList, ImVec2 origin, ImVec2 size) {
@@ -1286,11 +1789,28 @@ void DrawFooter(ImDrawList* drawList, ImVec2 origin, ImVec2 size) {
     const float right = origin.x + size.x - Px(kContentPadding);
     drawList->AddLine(ImVec2(left, top), ImVec2(right, top), kColHairline);
 
-    const float textY = std::floor(top + (Px(kFooterHeight) - g_fonts.caption->FontSize) * 0.5f);
-    const float glyph = Px(12.0f);
-    DrawInfoGlyph(drawList, ImVec2(left + glyph * 0.5f, textY + g_fonts.caption->FontSize * 0.5f + Px(0.5f)), glyph, kColTextDim);
-    DrawString(drawList, g_fonts.caption, ImVec2(left + glyph + Px(8.0f), textY), kColTextDim,
-               "JampusStrike.exe must be in the launcher folder.");
+    const float centerY = top + Px(kFooterHeight) * 0.5f;
+    const float textY = std::floor(centerY - g_fonts.caption->FontSize * 0.5f);
+
+    // Setup status: whether the launch target is where the launcher expects it.
+    RefreshTargetCheck();
+    const int firstVertex = drawList->VtxBuffer.Size;
+    const bool found = g_target.found;
+    const ImU32 tone = found ? kColReady : kColUpdating;
+    const ImVec2 dot(left + Px(4.0f), centerY + Px(0.5f));
+    drawList->AddCircleFilled(dot, Px(6.0f), ScaleAlpha(tone, 0.22f), 16);
+    drawList->AddCircleFilled(dot, Px(3.5f), tone, 16);
+    const char* status = found ? "JampusStrike.exe found" : "JampusStrike.exe not found in the launcher folder";
+    const float textX = left + Px(16.0f);
+    DrawString(drawList, g_fonts.caption, ImVec2(textX, textY), found ? kColTextSoft : kColText, status);
+    if (!found) {
+        const float buttonX = textX + MeasureText(g_fonts.caption, status).x + Px(12.0f);
+        if (FooterButton("##open_folder", "Open folder", ImVec2(buttonX, centerY)))
+            g_pendingAction = PendingAction::OpenLauncherFolder;
+    }
+    const float changed = EaseOutCubic(TransitionProgress(g_target.changedAt, 0.35f));
+    FadeVertices(drawList, firstVertex, changed, std::floor((1.0f - changed) * Px(4.0f)));
+
     const ImVec2 versionSize = MeasureText(g_fonts.caption, kVersionText);
     DrawString(drawList, g_fonts.caption, ImVec2(right - versionSize.x, textY), kColTextDim, kVersionText);
 }
@@ -1681,6 +2201,128 @@ void DrawModal() {
     ImGui::EndPopup();
 }
 
+// ---------------------------------------------------------------------------------------
+// Startup loading screen
+// ---------------------------------------------------------------------------------------
+
+// Loads one artwork per frame so the loading screen stays animated while it works.
+void StepStartupLoading() {
+    if (g_startup.artProcessed >= kGameCount || ImGui::GetFrameCount() < 3)
+        return;
+    const int index = g_startup.artProcessed++;
+    LoadGameArtAt(index);
+    GameArt& art = g_art[index];
+    if (!art.pixels.empty() && g_device)
+        CreateTextureFromRgba(art.pixels.data(), art.width, art.height, art.texture);
+    g_startup.artReadyAt[index] = Now();
+    g_animating = true;
+}
+
+bool StartupLoaded() {
+    return g_startup.artProcessed >= kGameCount;
+}
+
+// Displayed progress: follows the real work, paced so it never jumps straight to 100%.
+float SplashProgress(float elapsed) {
+    const float real = static_cast<float>(g_startup.artProcessed) / kGameCount;
+    return std::min(real, Saturate(elapsed / kSplashMinSeconds));
+}
+
+int SplashCurrentGame(float progress) {
+    return std::min(kGameCount - 1, static_cast<int>(progress * kGameCount));
+}
+
+// Loading screen: the page gradient in the colour of the game being loaded, that game's
+// banner crossfading to the next, and a slim progress bar.
+void DrawSplash(ImDrawList* drawList, ImVec2 origin, ImVec2 size, float elapsed, float exit) {
+    const int firstVertex = drawList->VtxBuffer.Size;
+    const float progress = SplashProgress(elapsed);
+    const bool done = progress >= 1.0f;
+    const int current = SplashCurrentGame(progress);
+    if (current != g_startup.bannerShown && g_art[current].texture) {
+        g_startup.bannerPrevious = g_startup.bannerShown;
+        g_startup.bannerShown = current;
+        g_startup.bannerChangedAt = Now();
+    }
+
+    drawList->AddRectFilled(origin, origin + size, kColBackground);
+    DrawGameGradient(drawList, origin, size, 1.0f);
+
+    const int contentVertex = drawList->VtxBuffer.Size;
+    const float centerX = origin.x + size.x * 0.5f;
+
+    // Banner of the game being loaded; drawn below its source size so it stays sharp.
+    const ImVec2 bannerSize(Px(kSplashBannerWidth), std::floor(Px(kSplashBannerWidth) * 9.0f / 16.0f));
+    const ImVec2 bannerMin = FloorVec(ImVec2(centerX - bannerSize.x * 0.5f, origin.y + size.y * 0.5f - Px(150.0f)));
+    const ImVec2 bannerMax = bannerMin + bannerSize;
+    const float rounding = Px(kHeroRounding);
+    DrawSoftShadow(drawList, bannerMin, bannerMax, rounding, Px(18.0f), Px(8.0f), 0.9f);
+    drawList->AddRectFilled(bannerMin, bannerMax, kColSurface, rounding);
+    const float swap = EaseOutCubic(TransitionProgress(g_startup.bannerChangedAt, kSplashBannerFadeSeconds));
+    if (g_startup.bannerPrevious >= 0 && swap < 1.0f)
+        DrawArtOrPlaceholder(drawList, g_startup.bannerPrevious, bannerMin, bannerMax, 1.0f, rounding, IM_COL32_WHITE);
+    if (g_startup.bannerShown >= 0)
+        DrawArtOrPlaceholder(drawList, g_startup.bannerShown, bannerMin, bannerMax, 1.0f + 0.04f * (1.0f - swap), rounding,
+                             IM_COL32(255, 255, 255, static_cast<int>(255.0f * swap)));
+    drawList->AddRect(bannerMin, bannerMax, kColHairlineStrong, rounding);
+
+    // Title, status and progress.
+    const char* title = "Jampus Client";
+    const float titleY = bannerMax.y + Px(28.0f);
+    DrawString(drawList, g_fonts.heading, ImVec2(centerX - MeasureText(g_fonts.heading, title).x * 0.5f, titleY), kColText, title);
+
+    char status[96];
+    if (done)
+        std::snprintf(status, sizeof(status), "Ready");
+    else
+        std::snprintf(status, sizeof(status), "Loading %s\xE2\x80\xA6", kGames[current].name);
+    const float statusY = titleY + g_fonts.heading->FontSize + Px(4.0f);
+    DrawString(drawList, g_fonts.caption, ImVec2(centerX - MeasureText(g_fonts.caption, status).x * 0.5f, statusY), kColTextSoft, status);
+
+    const float barWidth = Px(kSplashBarWidth);
+    const float barHeight = Px(4.0f);
+    const ImVec2 barMin(std::floor(centerX - barWidth * 0.5f), std::floor(statusY + g_fonts.caption->FontSize + Px(16.0f)));
+    drawList->AddRectFilled(barMin, barMin + ImVec2(barWidth, barHeight), IM_COL32(255, 255, 255, 20), barHeight * 0.5f);
+    if (progress > 0.0f)
+        drawList->AddRectFilled(barMin, barMin + ImVec2(std::max(barHeight, barWidth * progress), barHeight),
+                                LerpColor(g_glowNow, IM_COL32_WHITE, 0.3f), barHeight * 0.5f);
+
+    // The content rises in on launch and lifts away on exit.
+    const float enter = EaseOutCubic(TransitionProgress(g_startup.shownAt, kSplashFadeInSeconds));
+    FadeVertices(drawList, contentVertex, enter, std::floor((1.0f - enter) * Px(12.0f) - EaseOutCubic(exit) * Px(14.0f)));
+
+    const ImVec2 versionSize = MeasureText(g_fonts.caption, kVersionText);
+    DrawString(drawList, g_fonts.caption, origin + size - versionSize - ImVec2(Px(kContentPadding), Px(16.0f)), kColTextDim, kVersionText);
+
+    FadeVertices(drawList, firstVertex, 1.0f - EaseOutCubic(exit), 0.0f);
+}
+
+// Advances the loading screen and reports how far its exit has progressed (0 = showing,
+// 1 = gone). The library takes over as soon as loading finishes and the minimum time has
+// passed, or earlier if the user clicks or presses a key once everything is loaded.
+float UpdateStartup() {
+    const double now = Now();
+    if (g_startup.shownAt < 0.0)
+        g_startup.shownAt = now;
+    StepStartupLoading();
+    if (g_settings.skipIntro && g_startup.libraryAt < 0.0)
+        g_startup.libraryAt = now - kSplashOutSeconds; // Library straight away; its entrance still plays.
+
+    if (g_startup.libraryAt < 0.0) {
+        g_animating = true;
+        const float elapsed = static_cast<float>(now - g_startup.shownAt);
+        const bool loaded = StartupLoaded();
+        const bool skipRequested = elapsed > 0.5f &&
+            ((ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::GetMousePos().y > TitleBarHeightPx()) ||
+             ImGui::IsKeyPressed(ImGuiKey_Escape, false) || ImGui::IsKeyPressed(ImGuiKey_Enter, false) ||
+             ImGui::IsKeyPressed(ImGuiKey_Space, false));
+        if (loaded && (elapsed >= kSplashMinSeconds + kSplashHoldSeconds || skipRequested))
+            g_startup.libraryAt = now;
+        return 0.0f;
+    }
+    return TransitionProgress(g_startup.libraryAt, kSplashOutSeconds);
+}
+
 void DrawUi() {
     g_animating = false;
 
@@ -1700,16 +2342,49 @@ void DrawUi() {
     const ImVec2 origin = viewport->Pos;
     const ImVec2 size = viewport->Size;
 
+    const float splashExit = UpdateStartup();
     DrawBackdrop(drawList, origin, size);
+
+    // One colour runs through the whole session: the game being loaded, then the selected
+    // game, blending smoothly between them.
+    const bool loading = g_startup.libraryAt < 0.0;
+    g_glowNow = g_settings.gameColors
+                    ? UpdateGlowColor(loading ? SplashCurrentGame(SplashProgress(static_cast<float>(Now() - g_startup.shownAt)))
+                                              : g_selectedGame)
+                    : kColAccent;
+
+    // The library is built only once the loading screen starts handing off, so it cannot
+    // be clicked through the splash. Its sections then enter in sequence.
+    if (g_startup.libraryAt >= 0.0) {
+        DrawGameGradient(drawList, origin, size, EaseOutCubic(LibraryEnterProgress(0.0f)));
+
+        int firstVertex = drawList->VtxBuffer.Size;
+        const float gridTop = DrawHeader(drawList, origin, size.x);
+        float enter = EaseOutCubic(LibraryEnterProgress(0.0f));
+        FadeVertices(drawList, firstVertex, enter, std::floor((1.0f - enter) * Px(10.0f)));
+
+        firstVertex = drawList->VtxBuffer.Size;
+        if (g_tab == Tab::Library)
+            DrawLibrary(drawList, origin, size.x, gridTop);
+        else
+            DrawSettings(drawList, origin, size.x, gridTop, origin.y + size.y - Px(kFooterHeight) - Px(20.0f));
+        const float tabFade = EaseOutCubic(TransitionProgress(g_tabChangedAt, kTabFadeSeconds));
+        FadeVertices(drawList, firstVertex, tabFade, std::floor((1.0f - tabFade) * Px(8.0f)));
+
+        firstVertex = drawList->VtxBuffer.Size;
+        DrawFooter(drawList, origin, size);
+        enter = EaseOutCubic(LibraryEnterProgress(0.12f + kCardStaggerSeconds * kGameCount));
+        FadeVertices(drawList, firstVertex, enter, 0.0f);
+    }
+    if (splashExit < 1.0f)
+        DrawSplash(drawList, origin, size, static_cast<float>(Now() - g_startup.shownAt), splashExit);
     DrawTitleBar(drawList, origin, size.x);
-    const float gridTop = DrawHeader(drawList, origin, size.x);
-    DrawGameGrid(origin, size.x, gridTop);
-    DrawFooter(drawList, origin, size);
 
     // On Windows 11 DWM draws a rounded native border; elsewhere draw our own.
     if (!g_nativeRoundedCorners)
         drawList->AddRect(origin, origin + size, kColHairlineStrong);
 
+    DrawToast(drawList, origin, size);
     DrawModal();
     ImGui::End();
 }
@@ -1735,6 +2410,19 @@ void ProcessPendingAction() {
     switch (action) {
     case PendingAction::Minimize: ShowWindow(g_hwnd, SW_MINIMIZE); break;
     case PendingAction::Close: PostMessageW(g_hwnd, WM_CLOSE, 0, 0); break;
+    case PendingAction::OpenLauncherFolder: {
+        const std::wstring directory = GetLauncherDirectory();
+        if (directory.empty())
+            break;
+        // A topmost launcher would hide the new Explorer window; it returns to the top
+        // the next time it is activated (see WM_ACTIVATE).
+        SetWindowPos(g_hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        AllowSetForegroundWindow(ASFW_ANY);
+        const std::wstring arguments = L"\"" + directory + L"\"";
+        if (reinterpret_cast<INT_PTR>(ShellExecuteW(g_hwnd, L"open", L"explorer.exe", arguments.c_str(), nullptr, SW_SHOWNORMAL)) <= 32)
+            LogError(L"Could not open the launcher folder.");
+        break;
+    }
     case PendingAction::LaunchJampusStrike:
         if (!g_launchSucceeded)
             LaunchJampusStrike();
@@ -1791,6 +2479,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                      static_cast<int>(Px(kWindowHeight)), SWP_NOZORDER | SWP_NOACTIVATE);
         return 0;
     }
+    case WM_ACTIVATE:
+        if (LOWORD(wParam) != WA_INACTIVE)
+            ApplyAlwaysOnTop();
+        break;
     case WM_CLOSE:
         // Leave the message loop; the window is destroyed during orderly shutdown.
         PostQuitMessage(0);
@@ -1848,7 +2540,7 @@ bool CreateMainWindow() {
 
     // WS_MINIMIZEBOX/WS_SYSMENU add no visible chrome to a popup window but enable normal
     // taskbar minimize/restore behaviour and the caption context menu.
-    g_hwnd = CreateWindowExW(WS_EX_TOPMOST | WS_EX_APPWINDOW, kWindowClassName, kWindowTitle,
+    g_hwnd = CreateWindowExW((g_settings.alwaysOnTop ? WS_EX_TOPMOST : 0) | WS_EX_APPWINDOW, kWindowClassName, kWindowTitle,
                              WS_POPUP | WS_MINIMIZEBOX | WS_SYSMENU, x, y, width, height, nullptr, nullptr, g_instance, nullptr);
     if (!g_hwnd) {
         LogError(L"Window creation failed.");
@@ -1902,7 +2594,9 @@ int RunMessageLoop() {
     for (;;) {
         if (IsIconic(g_hwnd))
             WaitForMessages(INFINITE);
-        else if (occluded || (GetForegroundWindow() != g_hwnd && !g_animating))
+        // In the background, or with Reduce motion on, sleep until input arrives unless
+        // something is animating (Reduce motion makes most changes instant).
+        else if (occluded || ((GetForegroundWindow() != g_hwnd || g_settings.reduceMotion) && !g_animating))
             WaitForMessages(kBackgroundWaitMs);
 
         MSG msg;
@@ -1988,7 +2682,7 @@ int WINAPI wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE, _In_ PWSTR, _In
 
     // COM is required by WIC (artwork decoding) and by ShellExecuteExW's shell extensions.
     g_init.com = SUCCEEDED(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE));
-    LoadGameArt();
+    LoadSettings();
 
     if (!CreateMainWindow() || !CreateDeviceD3D(g_hwnd) || !InitImGui()) {
         Shutdown();
